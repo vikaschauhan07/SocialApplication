@@ -12,6 +12,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.authorization.method.AuthorizeReturnObject;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.transaction.UnexpectedRollbackException;
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -35,6 +36,7 @@ import com.socialapp.backend.service.UsersService;
 
 
 @RestController
+@CrossOrigin
 @RequestMapping("/api/v1/auth")
 public class UsersController {
 
