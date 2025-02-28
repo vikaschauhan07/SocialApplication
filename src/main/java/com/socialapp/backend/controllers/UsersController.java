@@ -25,6 +25,7 @@ import com.socialapp.backend.model.Users;
 import com.socialapp.backend.model.dto.UsersDto;
 import com.socialapp.backend.requests.ResetPasswordRequest;
 import com.socialapp.backend.requests.UserAuthentiacateRequest;
+import com.socialapp.backend.requests.UserEmailVerifyRequest;
 import com.socialapp.backend.requests.UsersRegisterRequest;
 import com.socialapp.backend.response.ResponseHandler;
 import com.socialapp.backend.response.UserAuthenticationResponse;
@@ -103,16 +104,17 @@ public class UsersController {
 		}
 	}
 
-	@PutMapping("/verify-email")
-	public ResponseEntity<Object> verifyEmailOtp(@RequestParam(name = "id") Long userId,
-			@RequestParam(name = "otp") Integer otp) {
+	@PostMapping("/verify-email")
+	public ResponseEntity<Object> verifyEmailOtp(@RequestBody UserEmailVerifyRequest userEmailVerifyRequest) {
 		try {
-			Users user = userserService.getUserById(userId);
+			Users user = userserService.getUserById(userEmailVerifyRequest.getId());
 
 			if (user == null) {
 				return ResponseHandler.responseHanler("User With this is not found.", HttpStatus.BAD_REQUEST, null);
 			}
-			if (user.getOtp().equals(otp.toString())) {
+		
+			if (user.getOtp().equals(userEmailVerifyRequest.getOtp().toString())) {
+				userserService.verifyUserEmail(user);
 				String accessToekn = jwtService.generateToken(user);
 				UsersDto userDto = UsersDto.builder().email(user.getEmail()).name(user.getName()).build();
 				return ResponseHandler.responseHanler("Email Verified Successfully", HttpStatus.OK,
@@ -123,6 +125,7 @@ public class UsersController {
 		} catch (NoSuchElementException ex) {
 			return ResponseHandler.responseHanler("User with the email not found.", HttpStatus.NOT_FOUND, null);
 		} catch (Exception e) {
+			System.out.println(e.toString());
 			return ResponseHandler.responseHanler("User with the email not found.", HttpStatus.INTERNAL_SERVER_ERROR,
 					null);
 		}
@@ -195,7 +198,7 @@ public class UsersController {
 		}
 	}
 
-	@PutMapping("/verify-forget-password-otp")
+	@PostMapping("/verify-forget-password-otp")
 	public ResponseEntity<Object> verifyForgetPasswordOtp(@RequestParam(name = "id") Long userId,
 			@RequestParam(name = "otp") Integer otp) {
 		try {
@@ -223,7 +226,7 @@ public class UsersController {
 		}
 	}
 	
-	@PutMapping("/reset-password")
+	@PostMapping("/reset-password")
 	public ResponseEntity<Object> resetPassword(@RequestBody ResetPasswordRequest reset) {
 		try {
 			Users user = userserService.getUserById(reset.getId());

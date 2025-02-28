@@ -25,6 +25,7 @@ import com.socialapp.backend.model.dto.UsersDto;
 import com.socialapp.backend.repository.UsersRepository;
 import com.socialapp.backend.requests.UserAuthentiacateRequest;
 import com.socialapp.backend.requests.UsersRegisterRequest;
+import com.socialapp.backend.response.PaginationResponseClass;
 import com.socialapp.backend.response.ResponseHandler;
 import com.socialapp.backend.response.UserAuthenticationResponse;
 import com.socialapp.backend.response.UserRegisterResponse;
@@ -68,7 +69,7 @@ public class UsersServiceImpl implements UsersService {
 	public UserRegisterResponse register(UsersRegisterRequest userRegisterRequest) throws IOException {
 
 		Optional<Users> optionalUser = userRepository.findByEmail(userRegisterRequest.getEmail());
-		
+
 		String profileImage = fileSaveService.saveFile(projectUrl, filePath, userRegisterRequest.getProfile_image());
 
 		String userName = userRegisterRequest.getName() + (Math.random() * 100001);
@@ -88,7 +89,7 @@ public class UsersServiceImpl implements UsersService {
 		}
 
 		Users registeredUser = userRepository.save(userData);
-		
+
 		emailSendService.sendMail(registeredUser.getEmail(), "Verification Otp", otp);
 
 		return UserRegisterResponse.builder().id(registeredUser.getId()).name(registeredUser.getName())
@@ -105,11 +106,7 @@ public class UsersServiceImpl implements UsersService {
 				userAuthentiacateRequest.getPassword()));
 
 		Users user = userRepository.findByEmail(userAuthentiacateRequest.getEmail()).orElseThrow();
-		UsersDto userDto = UsersDto.builder()
-				.id(user.getId())
-				.email(user.getEmail())
-				.name(user.getName())
-				.build();
+		UsersDto userDto = UsersDto.builder().id(user.getId()).email(user.getEmail()).name(user.getName()).build();
 		var accessToken = jwtService.generateToken(user);
 
 		return UserAuthenticationResponse.builder().access_token(accessToken).user(userDto).build();
@@ -138,17 +135,40 @@ public class UsersServiceImpl implements UsersService {
 
 	@Override
 	@Transactional
-	public Page<UsersDto> getAllUsers(int pageNo) {
+	public PaginationResponseClass<UsersDto> getAllUsers(int pageNo) {
 
-		Pageable pageable = PageRequest.of(pageNo, 2);
-		Page<Users> usersPage = userRepository.findAll(pageable);
+		pageNo = pageNo > 0 ? pageNo - 1 : 0;
 
-		List<UsersDto> userList = userRepository.findAll(pageable).getContent().stream()
-//				.filter((users) -> users.getEmailVerified() != 0)
-				.map(users -> UsersDto.builder().name(users.getName()).email(users.getEmail()).build())
+		Pageable pageable = PageRequest.of(pageNo, 10);
+//		Page<Users> usersPage = userRepository.findAll(pageable);
+//		List<Users> userList = usersPage.getContent().stream().map(users -> UsersDto.builder().id(users.getId()).name(users.getName()).email(users.getEmail()).build())
+//				.collect(Collectors.toList());
+		Page<Users> usersPage= userRepository.findVerifiedUsers(1, pageable);
+//		System.out.println(user);
+		System.out.println(usersPage.getContent());
+		List<UsersDto> userList = usersPage.getContent().stream()
+//				 .filter((users) -> users.getEmailVerified() != 0)
+				.map(users -> UsersDto.builder().id(users.getId()).name(users.getName()).email(users.getEmail())
+						.userName(users.getUsername()).profileImage("http://localhost:8083/" + users.getProfileImage())
+						.phoneCode(users.getPhoneCode()).phoneNumber(users.getPhoneNumber()).build())
 				.collect(Collectors.toList());
-		System.out.println("Hello");
-		return new PageImpl(userList, pageable, userList.size());
+
+		PaginationResponseClass<UsersDto> response = new PaginationResponseClass();
+		response.setContent(userList);
+		response.setPageNumber(usersPage.getNumber() + 1);
+		response.setPageSize(usersPage.getSize());
+		response.setTotalElements(usersPage.getTotalElements());
+		response.setTotalPages(usersPage.getTotalPages());
+
+		return response;
+
+//		System.out.println(usersPage.getContent());
+//		List<UsersDto> userList = userRepository.findAll(pageable).getContent().stream()
+////				.filter((users) -> users.getEmailVerified() != 0)
+//				.map(users -> UsersDto.builder().id(users.getId()).name(users.getName()).email(users.getEmail()).build())
+//				.collect(Collectors.toList());
+
+//		return new PageImpl(userList, pageable, userList.size());
 //		new PageImpl(u, pageable, usersPage.getTotalElements())
 
 	}
@@ -159,12 +179,29 @@ public class UsersServiceImpl implements UsersService {
 		user.setRememberToken("abcdefghijklmnopqrstuvwxyz");
 		userRepository.save(user);
 		return token;
-		
+
 	}
 
 	@Override
 	public void updatePassword(Users user, String password) {
 		user.setPassword(passwordEncoder.encode(password));
+		userRepository.save(user);
+	}
+
+	@Override
+	public List<UsersDto> getAllUsers() {
+		List<UsersDto> userList = userRepository.findAll().stream()
+//				.filter((users) -> users.getEmailVerified() != 0)
+				.map(users -> UsersDto.builder().id(users.getId()).name(users.getName()).email(users.getEmail())
+						.build())
+				.collect(Collectors.toList());
+		return userList;
+	}
+
+	@Override
+	public void verifyUserEmail(Users user) {
+//		userRepository.verifyUserEmail(user.getId(), 1);
+		user.setEmailVerified(1);
 		userRepository.save(user);
 	}
 

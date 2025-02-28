@@ -14,6 +14,10 @@ import lombok.Setter;
 @AllArgsConstructor
 public class UsersDto {
 	private Long id;
-	private String  name;
+	private String name;
+	private String userName;
 	private String email;
+	private String phoneCode;
+	private String phoneNumber;
+	private String profileImage;
 }

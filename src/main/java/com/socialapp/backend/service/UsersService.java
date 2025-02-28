@@ -10,6 +10,7 @@ import com.socialapp.backend.model.Users;
 import com.socialapp.backend.model.dto.UsersDto;
 import com.socialapp.backend.requests.UserAuthentiacateRequest;
 import com.socialapp.backend.requests.UsersRegisterRequest;
+import com.socialapp.backend.response.PaginationResponseClass;
 import com.socialapp.backend.response.UserAuthenticationResponse;
 import com.socialapp.backend.response.UserRegisterResponse;
 
@@ -21,9 +22,11 @@ public interface UsersService {
 	Users getUserById(Long id);
 	UserAuthenticationResponse authenticate(UserAuthentiacateRequest userAuthentiacateRequest);
 	void sendMailToUser(String subject,String body,Users user);
-	Page<UsersDto> getAllUsers(int pageable);
+	PaginationResponseClass<UsersDto> getAllUsers(int pageable);
+	List<UsersDto> getAllUsers();
 	String genrateRandomToken(Users user);
 	void updatePassword(Users user,String password);
+	void verifyUserEmail(Users user);
 //	ResponseEntity<Object> getAllUsers(int pageable);
 //	List<UsersDto> getAllUsers(int pageable);
 
